@@ -1,0 +1,43 @@
+service: ${env:NAME}
+plugins:
+  - serverless-webpack
+  - serverless-dotenv-plugin
+  - serverless-offline
+  - serverless-plugin-scripts
+
+provider:
+  name: aws
+  timeout: 90
+  runtime: nodejs12.x
+  region: ${env:REGION}
+  versionFunctions: false
+  environment:
+    DB_HOST: ${file(./scripts/get-host.js)}
+    DB_NAME: ${env:RDS_PREFIX}_${env:STAGE}
+    DB_USERNAME: ${env:RDS_USERNAME}_${env:STAGE}
+  vpc:
+    securityGroupIds:
+      - { Fn::GetAtt: [ServerlessSecurityGroup, GroupId] }
+    subnetIds:
+      - Ref: ServerlessSubnetA
+      - Ref: ServerlessSubnetB
+      - Ref: ServerlessSubnetC
+resources:
+  - ${file(./resources/config/roles.yml)}
+  - ${file(./resources/config/vpc.yml)}
+  - ${file(./resources/config/subnet.yml)}
+  - ${file(./resources/config/internet-gateway.yml)}
+  - ${file(./resources/config/nat-gateway.yml)}
+  - ${file(./resources/config/elastic-ip.yml)}
+  - ${file(./resources/config/route-private.yml)}
+  - ${file(./resources/config/route-public.yml)}
+  - ${file(./resources/config/security-groups.yml)}
+  - ${file(./resources/config/secrets.yml)}
+  - ${file(./resources/config/db-cluster.yml)}
+
+custom:
+  webpack:
+    excludeFiles: ./**/*.test.js
+  AURORA:
+    VPC_CIDR: 10
+    DB_NAME: ${env:RDS_PREFIX}_${env:STAGE}
